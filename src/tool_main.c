@@ -232,9 +232,9 @@ static void main_free(struct GlobalConfig *config)
 ** curl tool main function.
 */
 #ifdef _UNICODE
-int wmain(int argc, wchar_t *argv[])
+int main_origin(int argc, wchar_t *argv[])
 #else
-int main(int argc, char *argv[])
+int main_origin(int argc, char *argv[])
 #endif
 {
   CURLcode result = CURLE_OK;
@@ -289,6 +289,129 @@ int main(int argc, char *argv[])
 #else
   return (int)result;
 #endif
+}
+
+bool read_args(int* argc, char* argv[1024], char* buff)
+{
+	static char* firstarg = "curl.exe";
+	argv[0] = firstarg;
+	*argc = 1;
+	argv[*argc] = buff;
+	*buff = 0;
+
+	int c = getchar();
+
+	bool _isspace = true;
+	bool _isquote = false;
+	bool _isstash = false;
+
+	while (c != EOF && c != '\n')
+	{
+		if (c == '\r')
+		{
+			//skip 
+		}		
+		else if (_isstash)
+		{
+			if (c == '\"' || c == '\\')
+			{
+				*buff = c;
+				++buff;
+				*buff = 0;
+			}
+			else if (c == 't')
+			{
+				*buff = '\t';
+				++buff;
+				*buff = 0;
+			}
+			else if (c == 'n')
+			{
+				*buff = '\n';
+				++buff;
+				*buff = 0;
+			}
+
+			_isstash = false;
+		}
+		else if (c == '\\')
+		{
+			_isstash = true;
+		}
+		else if (_isquote && c != '\"')
+		{
+			*buff = c;
+			++buff;
+			*buff = 0;
+		}
+		else if (c == '\"')
+		{
+			if (!_isspace || _isquote)
+			{
+				++*argc;
+				++buff;
+				argv[*argc] = buff;
+				*buff = 0;
+				_isspace = true;
+			}
+
+			_isquote = !_isquote;
+		}
+		else if (isspace(c))
+		{
+			if (!_isspace)
+			{
+				++*argc;
+				++buff;
+				argv[*argc] = buff;
+				*buff = 0;
+				_isspace = true;
+			}
+		}
+		else
+		{
+			_isspace = false;
+
+			*buff = c;
+			++buff;
+			*buff = 0;
+		}
+		
+		c = getchar();
+	}
+
+	if (!_isspace)
+	{
+		++*argc;
+	}
+	return true;
+}
+
+
+#ifdef _UNICODE
+int wmain()
+#else
+int main()
+#endif
+{
+	int argc;
+	char* argv[1024];
+	char buff[32 * 1024];
+
+	while (read_args(&argc, argv, buff))
+	{
+		//for (int i = 0; i < argc; ++i)
+		//{
+		//	printf("%d. %s\n", i, argv[i]);
+		//}
+
+		//printf("\n");
+		if (argc < 2) {
+			continue;
+		}
+
+		main_origin(argc, argv);
+	}
 }
 
 #endif /* ndef UNITTESTS */
