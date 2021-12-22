@@ -411,6 +411,8 @@ int main()
 		}
 
 		main_origin(argc, argv);
+		printf("\n");
+		fflush(stdout);
 	}
 }
 
