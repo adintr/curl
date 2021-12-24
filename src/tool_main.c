@@ -410,8 +410,9 @@ int main()
 			continue;
 		}
 
-		main_origin(argc, argv);
+		int ret = main_origin(argc, argv);
 		printf("\n");
+		printf("#@log info curl execute done, result code: %d\n", ret);
 		fflush(stdout);
 	}
 }
